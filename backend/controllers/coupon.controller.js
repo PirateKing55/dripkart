@@ -10,10 +10,54 @@ export const getCoupon = async (req, res) => {
 	}
 };
 
+export const getAllCoupons = async (req, res) => {
+	try {
+		const coupons = await Coupon.find();
+		res.json(coupons);
+	} catch (error) {
+		console.log("Error in getAllCoupons controller", error.message);
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+}
+
+export const createCoupon = async (req, res) => {
+	try {
+		const { code, discountPercentage, expirationDate } = req.body;
+		const coupon = await Coupon.findOne({ code: code });
+		if (coupon) {
+			return res.status(400).json({ error: "Coupon already exists" });
+		}
+		const couponCreated = await Coupon.create({
+			code,
+			discountPercentage,
+			expirationDate
+		});
+		res.status(201).json(couponCreated);
+	}
+	catch (error) {
+		console.log("Error in createCoupon controller", error.message);
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+}
+
+export const toggleActive = async (req, res) => {
+	try {
+		const coupon = await Coupon.findOne({ code: req.body.code });
+		if (coupon) {
+			coupon.isActive = !coupon.isActive;
+			const savedcoupon = await coupon.save();
+			res.status(200).json({ message: "Coupon updated", coupon: savedcoupon });
+		}
+	} catch (error) {
+		console.log("Error in toggleActive controller", error.message);
+		res.status(500).json({ message: "Server error", error: error.message });
+	}
+}
+
 export const validateCoupon = async (req, res) => {
 	try {
 		const { code } = req.body;
-		const coupon = await Coupon.findOne({ code: code, userId: req.user._id, isActive: true });
+		const coupon = await Coupon.findOne({ code: code, isActive: true });
 
 		if (!coupon) {
 			return res.status(404).json({ message: "Coupon not found" });
